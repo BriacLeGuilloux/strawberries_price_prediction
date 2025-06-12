@@ -4,23 +4,6 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def load_data(path: str) -> pd.DataFrame:
-    """
-    Load the raw data and perform initial datetime processing
-    
-    Args:
-        path (str): Path to the raw data file
-        
-    Returns:
-        pd.DataFrame: Loaded dataframe with processed datetime index
-    """
-    df = pd.read_csv(path)
-    
-    # Convert start_date and end_date to datetime
-    df['start_date'] = pd.to_datetime(df['start_date'])
-    df['end_date'] = pd.to_datetime(df['end_date'])
-    
-    return df
 
 def split_train_test(df: pd.DataFrame, test_start_year: int = 2022) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -47,7 +30,7 @@ def plot_missing_values(df: pd.DataFrame) -> None:
         df (pd.DataFrame): Input dataframe
     """
     plt.figure(figsize=(10, 6))
-    sns.heatmap(df.isnull(), yticklabels=False, cbar=True, cmap='viridis')
+    sns.heatmap(df.isnull())
     plt.title('Missing Values Heatmap')
     plt.show()
 

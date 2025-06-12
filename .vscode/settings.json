@@ -1,6 +1,7 @@
 {
-    "workbench.startupEditor": "readme",
-    "workbench.editorAssociations": {
-        "*.md": "vscode.markdown.preview.editor"
-    }
+  "python.defaultInterpreterPath": "/home/briacleguillou/.var/app/com.visualstudio.code/cache/pypoetry/virtualenvs/strawberries-price-prediction-RFzSQChC-py3.12/bin/python",
+  "python.poetryPath": "poetry",
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  "python.envFile": "${workspaceFolder}/.env"
 }
