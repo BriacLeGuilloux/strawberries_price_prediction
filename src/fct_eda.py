@@ -3,6 +3,15 @@ import numpy as np
 from typing import Tuple
 import matplotlib.pyplot as plt
 import seaborn as sns
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+from src.parameter import get_dict_params
+
+# Load of parameters
+dict_params = get_dict_params()
+weather_cols = dict_params['weather_cols']
+test_start_year = dict_params['test_start_year']
+
 
 def plot_missing_values(df: pd.DataFrame) -> None:
     """
@@ -16,7 +25,7 @@ def plot_missing_values(df: pd.DataFrame) -> None:
     plt.title('Missing Values Heatmap')
     plt.show()
 
-def split_train_test(df: pd.DataFrame, test_start_year: int = 2022) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def split_train_test(df: pd.DataFrame, test_start_year: int = test_start_year) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Split data into training and testing sets based on year
     
@@ -72,31 +81,31 @@ def plot_weather_correlations(df: pd.DataFrame) -> None:
     plt.title('Weather Features Correlation with Price')
     plt.show()
 
-def plot_seasonal_patterns(df: pd.DataFrame) -> None:
+
+def seasonal_analysis_weekly(df: pd.DataFrame) -> None:
     """
-    Plot seasonal patterns in price
-    
+    Perform seasonal decomposition of weekly strawberry prices using statsmodels.
+
     Args:
-        df (pd.DataFrame): Input dataframe
+        df (pd.DataFrame): DataFrame with 'start_date' and 'price' columns (weekly frequency).
     """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-    
-    # Price by month
-    price_by_month = df.groupby(df['start_date'].dt.month)['price'].mean()
-    price_by_month = price_by_month.reindex(range(1, 13))  # Force les mois 1 à 12, insère NaN si absent
-    price_by_month.plot(kind='line', ax=ax1, marker='o')
-    ax1.set_title('Average Price by Month')
-    ax1.set_xlabel('Month')
-    ax1.set_ylabel('Average Price')
-    
-    # Price by week
-    df.groupby('week')['price'].mean().plot(
-        kind='line', ax=ax2, marker='o'
-    )
-    ax2.set_title('Average Price by Week')
-    ax2.set_xlabel('Week')
-    ax2.set_ylabel('Average Price')
-    
+    # Vérification des colonnes
+    if 'start_date' not in df.columns or 'price' not in df.columns:
+        raise ValueError("DataFrame must contain 'start_date' and 'price' columns.")
+
+    # Conversion des dates et indexation
+    df = df.copy()
+    df['start_date'] = pd.to_datetime(df['start_date'])
+    df = df.set_index('start_date')
+
+    # Agrégation par semaine, interpolation des valeurs manquantes
+    weekly_price = df['price'].resample('W-MON').mean().interpolate()
+
+    # Décomposition saisonnière additive
+    decomposition = seasonal_decompose(weekly_price, model='additive', period=52)
+
+    # Affichage des composantes
+    decomposition.plot()
+    plt.suptitle('Seasonal Decomposition of Weekly Strawberry Price', fontsize=16)
     plt.tight_layout()
     plt.show()
-

@@ -1,3 +1,6 @@
+# Store parameters, the puropose is to track every variables, that we may want to change later
+# and keep them in the parameter file.
+
 weather_cols = ['windspeed', 'temp', 'cloudcover', 'precip', 'solarradiation', 'price']
 test_start_year = 2022
 
