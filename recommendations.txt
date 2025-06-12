@@ -1,0 +1,21 @@
+## Recommendations for Improvement
+
+1. Exploratory Data Analysis
+
+Explore lagged weather-price correlations
+Include production and consumption data
+
+
+2. Feature Engineering
+Revisit lagged correlations
+Add insights on "good production" and "bad production" interpretation
+Include external data (e.g. holidays, market events)
+Try feature selection methods and robust scaling
+
+
+3. Modeling
+Test SARIMA, Prophet, LSTM, Transformer models
+Use validation sets for deeper evaluation with optimisation of hyperparameters
+
+4. Evaluation
+Analyze errors by season and model failure cases
