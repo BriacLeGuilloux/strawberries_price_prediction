@@ -92,3 +92,33 @@ def seasonal_analysis_weekly(df: pd.DataFrame) -> None:
     plt.suptitle('Seasonal Decomposition of Weekly Strawberry Price', fontsize=16)
     plt.tight_layout()
     plt.show()
+
+
+def plot_seasonal_patterns(df: pd.DataFrame) -> None:
+    """
+    Plot seasonal patterns in price using boxplots
+    
+    Args:
+        df (pd.DataFrame): Input dataframe with 'start_date' and 'price' columns
+    """
+    # Ajouter colonne mois si elle n'existe pas
+    if 'month' not in df.columns:
+        df['month'] = df['start_date'].dt.month
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+
+    # Boxplot par mois
+    sns.boxplot(data=df, x='month', y='price', ax=ax1)
+    ax1.set_title('Price Distribution by Month')
+    ax1.set_xlabel('Month')
+    ax1.set_ylabel('Price')
+
+    # Boxplot par semaine
+    sns.boxplot(data=df, x='week', y='price', ax=ax2)
+    ax2.set_title('Price Distribution by Week')
+    ax2.set_xlabel('Week')
+    ax2.set_ylabel('Price')
+    ax2.set_xticks(range(1, 54, 2))  # Espacement lisible
+
+    plt.tight_layout()
+    plt.show()
