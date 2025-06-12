@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from typing import Tuple
 import matplotlib.pyplot as plt
 import seaborn as sns
 from statsmodels.tsa.seasonal import seasonal_decompose
@@ -25,22 +24,6 @@ def plot_missing_values(df: pd.DataFrame) -> None:
     plt.title('Missing Values Heatmap')
     plt.show()
 
-def split_train_test(df: pd.DataFrame, test_start_year: int = test_start_year) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Split data into training and testing sets based on year
-    
-    Args:
-        df (pd.DataFrame): Input dataframe
-        test_start_year (int): Year to start test set from
-        
-    Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]: Training and testing dataframes
-    """
-    # Split based on start_date
-    train = df[df['year'] < test_start_year].copy()
-    test = df[df['year'] >= test_start_year].copy()
-    
-    return train, test
 
 def plot_price_distribution(df: pd.DataFrame) -> None:
     """

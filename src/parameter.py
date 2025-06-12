@@ -3,6 +3,7 @@
 
 weather_cols = ['windspeed', 'temp', 'cloudcover', 'precip', 'solarradiation', 'price']
 test_start_year = 2022
+col_to_scale = ['windspeed', 'temp', 'cloudcover', 'precip', 'solarradiation', 'price']
 
 
 def get_dict_params():
@@ -11,5 +12,6 @@ def get_dict_params():
     """
     return {
         'weather_cols': weather_cols,
-        'test_start_year': test_start_year
+        'test_start_year': test_start_year,
+        'col_to_scale': col_to_scale
     }
