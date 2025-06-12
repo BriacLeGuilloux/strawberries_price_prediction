@@ -8,7 +8,7 @@ import xgboost as xgb
 
 def naive_forecast(train: pd.Series, test: pd.Series) -> np.ndarray:
     """
-    Simple naive forecast using last known value
+    Simple naive forecast using average.
     
     Args:
         train (pd.Series): Training time series
@@ -17,60 +17,11 @@ def naive_forecast(train: pd.Series, test: pd.Series) -> np.ndarray:
     Returns:
         np.ndarray: Naive predictions
     """
-    last_value = train.iloc[-1]
+    last_value = train.mean()
     naive_pred = np.full(len(test), last_value)
     return naive_pred
 
-def fit_ar_model(train: pd.Series, test: pd.Series, lags: int = 12) -> Tuple[np.ndarray, Optional[AutoReg]]:
-    """
-    Fit and predict using AR model
-    
-    Args:
-        train (pd.Series): Training time series
-        test (pd.Series): Test time series
-        lags (int): Number of lags to use
-        
-    Returns:
-        tuple: (predictions, fitted model)
-    """
-    model = AutoReg(train, lags=lags)
-    fitted_model = model.fit()
-    predictions = fitted_model.predict(start=len(train), end=len(train)+len(test)-1)
-    return predictions, fitted_model
 
-def fit_ma_model(train: pd.Series, test: pd.Series, order: int = 1) -> Tuple[np.ndarray, Optional[ARIMA]]:
-    """
-    Fit and predict using MA model
-    
-    Args:
-        train (pd.Series): Training time series
-        test (pd.Series): Test time series
-        order (int): MA order
-        
-    Returns:
-        tuple: (predictions, fitted model)
-    """
-    model = ARIMA(train, order=(0, 0, order))
-    fitted_model = model.fit()
-    predictions = fitted_model.forecast(steps=len(test))
-    return predictions, fitted_model
-
-def fit_arma_model(train: pd.Series, test: pd.Series, order: tuple = (1, 1)) -> Tuple[np.ndarray, Optional[ARIMA]]:
-    """
-    Fit and predict using ARMA model
-    
-    Args:
-        train (pd.Series): Training time series
-        test (pd.Series): Test time series
-        order (tuple): ARMA order (p,q)
-        
-    Returns:
-        tuple: (predictions, fitted model)
-    """
-    model = ARIMA(train, order=(order[0], 0, order[1]))
-    fitted_model = model.fit()
-    predictions = fitted_model.forecast(steps=len(test))
-    return predictions, fitted_model
 
 def fit_arima_model(train: pd.Series, test: pd.Series, order: tuple = (1, 1, 1)) -> Tuple[np.ndarray, Optional[ARIMA]]:
     """
