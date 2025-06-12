@@ -67,48 +67,63 @@ def calculate_metrics(y_true: pd.Series, y_pred: np.ndarray, metric_to_compute="
     return np.mean(values) if values else np.nan
 
 
-
-
-def plot_predictions(y_true: pd.Series, predictions: Dict[str, np.ndarray], title: str = "Model Predictions") -> None:
+def split_into_segments(series: pd.Series, max_gap_days: int = 31) -> Dict[int, pd.Series]:
     """
-    Plot actual vs predicted values for multiple models, handling gaps in the data
+    Split a time series into continuous segments based on time gaps.
+    
+    Args:
+        series (pd.Series): Time-indexed series
+        max_gap_days (int): Maximum gap allowed between points to consider continuity
+        
+    Returns:
+        Dict[int, pd.Series]: Dictionary with segment index as keys and series segments as values
+    """
+    gaps = series.index.to_series().diff() > pd.Timedelta(days=max_gap_days)
+    segments = np.cumsum(gaps)
+    return {i: series[segments == i] for i in range(segments.max() + 1)}
+
+
+def plot_predictions(y_true: pd.Series, predictions: Dict[str, np.ndarray]) -> None:
+    """
+    Plot actual vs predicted values for multiple models using consistent colors and segment-aware plotting.
     
     Args:
         y_true (pd.Series): Actual values
         predictions (Dict[str, np.ndarray]): Dictionary of model predictions
-        title (str): Plot title
     """
     plt.figure(figsize=(12, 6))
-    
-    # Plot actual values
-    # Convert to DataFrame to easily handle gaps
-    actual_df = pd.DataFrame({'value': y_true}, index=y_true.index)
-    # Identify gaps (more than 1 month between points)
-    gaps = actual_df.index.to_series().diff() > pd.Timedelta(days=31)
-    # Split into continuous segments
-    segments = np.cumsum(gaps)
-    
-    for segment in range(segments.max() + 1):
-        segment_data = actual_df[segments == segment]
-        plt.plot(segment_data.index, segment_data['value'], 
-                label='Actual' if segment == 0 else "_nolegend_", 
-                linewidth=2)
-    
-    # Plot predictions
-    for name, pred in predictions.items():
-        pred_df = pd.DataFrame({'value': pred}, index=y_true.index)
-        for segment in range(segments.max() + 1):
-            segment_data = pred_df[segments == segment]
-            plt.plot(segment_data.index, segment_data['value'], '--',
-                    label=name if segment == 0 else "_nolegend_", 
-                    alpha=0.7)
-    
-    plt.title(title)
+
+    # Palette de couleurs
+    color_list = plt.get_cmap("tab10").colors  # 10 couleurs distinctes
+    model_names = ['Actual'] + list(predictions.keys())
+    color_map = {name: color_list[i % len(color_list)] for i, name in enumerate(model_names)}
+
+    # Tracer les vraies valeurs
+    actual_segments = split_into_segments(y_true)
+    for i, segment in actual_segments.items():
+        plt.plot(segment.index, segment.values,
+                 label='Actual' if i == 0 else "_nolegend_",
+                 linewidth=2,
+                 color=color_map['Actual'])
+
+    # Tracer les prédictions de chaque modèle avec couleur fixe
+    for model_name, pred in predictions.items():
+        pred_series = pd.Series(pred, index=y_true.index)
+        pred_segments = split_into_segments(pred_series)
+        for i, segment in pred_segments.items():
+            plt.plot(segment.index, segment.values, '--',
+                     label=model_name if i == 0 else "_nolegend_",
+                     alpha=0.7,
+                     color=color_map[model_name])
+
+    plt.title("Model Predictions")
     plt.legend()
     plt.xticks(rotation=45)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
+
+
 
 def plot_error_distribution(y_true: pd.Series, predictions: Dict[str, np.ndarray]) -> Dict[str, Dict[str, float]]:
     """
