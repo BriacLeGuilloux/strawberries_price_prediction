@@ -33,12 +33,13 @@ def fit_arima_model(train: pd.Series, test: pd.Series, order: tuple = (1, 1, 1))
         order (tuple): ARIMA order (p,d,q)
         
     Returns:
-        tuple: (predictions, fitted model)
+        tuple: (predictions as numpy array, fitted model)
     """
     model = ARIMA(train, order=order)
     fitted_model = model.fit()
     predictions = fitted_model.forecast(steps=len(test))
-    return predictions, fitted_model
+    # Convert predictions to numpy array to match other models
+    return predictions.values, fitted_model
 
 def create_features_for_xgboost(data: pd.Series, n_lags: int = 12) -> Tuple[np.ndarray, np.ndarray]:
     """
