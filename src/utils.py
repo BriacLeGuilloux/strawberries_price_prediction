@@ -4,6 +4,17 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+def plot_missing_values(df: pd.DataFrame) -> None:
+    """
+    Plot missing values heatmap
+    
+    Args:
+        df (pd.DataFrame): Input dataframe
+    """
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(df.isnull())
+    plt.title('Missing Values Heatmap')
+    plt.show()
 
 def split_train_test(df: pd.DataFrame, test_start_year: int = 2022) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -21,18 +32,6 @@ def split_train_test(df: pd.DataFrame, test_start_year: int = 2022) -> Tuple[pd.
     test = df[df['year'] >= test_start_year].copy()
     
     return train, test
-
-def plot_missing_values(df: pd.DataFrame) -> None:
-    """
-    Plot missing values heatmap
-    
-    Args:
-        df (pd.DataFrame): Input dataframe
-    """
-    plt.figure(figsize=(10, 6))
-    sns.heatmap(df.isnull())
-    plt.title('Missing Values Heatmap')
-    plt.show()
 
 def plot_price_distribution(df: pd.DataFrame) -> None:
     """
@@ -83,9 +82,9 @@ def plot_seasonal_patterns(df: pd.DataFrame) -> None:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
     # Price by month
-    df.groupby(df['start_date'].dt.month)['price'].mean().plot(
-        kind='line', ax=ax1, marker='o'
-    )
+    price_by_month = df.groupby(df['start_date'].dt.month)['price'].mean()
+    price_by_month = price_by_month.reindex(range(1, 13))  # Force les mois 1 à 12, insère NaN si absent
+    price_by_month.plot(kind='line', ax=ax1, marker='o')
     ax1.set_title('Average Price by Month')
     ax1.set_xlabel('Month')
     ax1.set_ylabel('Average Price')
@@ -100,3 +99,4 @@ def plot_seasonal_patterns(df: pd.DataFrame) -> None:
     
     plt.tight_layout()
     plt.show()
+
