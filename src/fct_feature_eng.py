@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Optional, Dict, Any
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import skew
 from src.parameter import get_dict_params
@@ -10,6 +10,57 @@ dict_params = get_dict_params()
 weather_cols = dict_params['weather_cols']
 test_start_year = dict_params['test_start_year']
 col_to_scale = dict_params['col_to_scale']
+
+def interpolate_missing_values(series: pd.Series, 
+                             method: str = 'rolling',
+                             params: Optional[Dict[str, Any]] = None) -> pd.Series:
+    """
+    Interpolate missing values using various methods
+    
+    Args:
+        series (pd.Series): Input time series
+        method (str): Interpolation method ('mean', 'rolling')
+        params (Dict[str, Any], optional): Parameters for the chosen method
+            - For 'mean': 
+                - groupby: None or str ('year', 'season', 'month')
+            - For 'rolling':
+                - window: int (default: 4)
+                - min_periods: int (default: 1)
+                
+    Returns:
+        pd.Series: Series with interpolated values
+    """
+    if params is None:
+        params = {}
+        
+    series_clean = series.copy()
+    
+    if method == 'mean':
+        groupby = params.get('groupby', None)
+        if groupby is None:
+            # Simple global mean
+            fill_value = series.mean()
+            series_clean = series.fillna(fill_value)
+        else:
+            # Grouped mean
+            grouped_means = series.groupby(groupby).transform('mean')
+            series_clean = series.fillna(grouped_means)
+            
+    elif method == 'rolling':
+        window = params.get('window', 4)
+        min_periods = params.get('min_periods', 1)
+        rolling_mean = series.rolling(
+            window=window,
+            min_periods=min_periods,
+            center=True
+        ).mean()
+        series_clean = series.fillna(rolling_mean)
+    
+    # Fallback to global mean for any remaining NaN
+    if series_clean.isna().any():
+        series_clean = series_clean.fillna(series.mean())
+        
+    return series_clean
 
 def create_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -101,16 +152,25 @@ def create_price_features(df: pd.DataFrame) -> pd.DataFrame:
         
     return df
 
-def handle_missing_values(df: pd.DataFrame, is_training: bool = True) -> pd.DataFrame:
+def handle_missing_values(df: pd.DataFrame, is_training: bool = True, 
+                         method: str = 'rolling') -> pd.DataFrame:
     """
-    Handle missing values in the dataset
+    Handle missing values in the dataset using specified interpolation method
+    
+    Args:
+        df (pd.DataFrame): Input dataframe
+        is_training (bool): Whether this is training data
+        method (str): Interpolation method ('mean', 'rolling')
+        
+    Returns:
+        pd.DataFrame: DataFrame with handled missing values
     """
     df = df.copy()
     
-    # For weather features, use rolling mean
+    # For weather features, use specified interpolation method
     for col in weather_cols:
         if col != 'price':  # Don't impute price for training data
-            df[col] = df[col].fillna(df[f'{col}_rolling_mean_4w'])
+            df[col] = interpolate_missing_values(df[col], method=method)
     
     # For training data, we can drop rows with missing prices
     if is_training:
@@ -118,9 +178,18 @@ def handle_missing_values(df: pd.DataFrame, is_training: bool = True) -> pd.Data
     
     return df
 
-def preprocessing(df: pd.DataFrame, is_training: bool = True) -> pd.DataFrame:
+def preprocessing(df: pd.DataFrame, is_training: bool = True,
+                 interpolation_method: str = 'rolling') -> pd.DataFrame:
     """
     Complete preprocessing pipeline
+    
+    Args:
+        df (pd.DataFrame): Input dataframe
+        is_training (bool): Whether this is training data
+        interpolation_method (str): Method for handling missing values
+        
+    Returns:
+        pd.DataFrame: Preprocessed dataframe
     """
     df = df.copy()
     
@@ -135,7 +204,7 @@ def preprocessing(df: pd.DataFrame, is_training: bool = True) -> pd.DataFrame:
     df = create_price_features(df)
     
     # Handle missing values
-    df = handle_missing_values(df, is_training)
+    df = handle_missing_values(df, is_training, method=interpolation_method)
     
     # Create seasonal indicators
     season_dummies = pd.get_dummies(df['season'], prefix='season')
