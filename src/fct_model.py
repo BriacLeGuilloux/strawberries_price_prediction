@@ -1,9 +1,11 @@
+# functions used for notebook 3_model
+
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA
 import joblib
-from typing import Tuple
+from typing import Tuple, Optional
 import xgboost as xgb
 
 def naive_forecast(train: pd.Series, test: pd.Series) -> np.ndarray:
@@ -23,7 +25,7 @@ def naive_forecast(train: pd.Series, test: pd.Series) -> np.ndarray:
 
 
 
-def fit_arima_model(train: pd.Series, test: pd.Series, order: tuple = (1, 1, 1)) :
+def fit_arima_model(train: pd.Series, test: pd.Series, order: tuple = (1, 1, 1)) -> Tuple[np.ndarray, ARIMA]:
     """
     Fit and predict using ARIMA model
     
@@ -68,7 +70,7 @@ def create_features_for_xgboost(data: pd.Series, n_lags: int = 12) -> Tuple[np.n
     
     return X, y
 
-def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) :
+def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) -> Tuple[np.ndarray, xgb.XGBRegressor]:
     """
     Fit and predict using XGBoost model
     

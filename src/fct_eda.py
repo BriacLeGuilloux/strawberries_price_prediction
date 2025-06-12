@@ -1,3 +1,5 @@
+# fonctions used for notebook 1_explore
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +8,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 from src.parameter import get_dict_params
 
-# Load of parameters
+# Load parameters
 dict_params = get_dict_params()
 weather_cols = dict_params['weather_cols']
 test_start_year = dict_params['test_start_year']
@@ -27,10 +29,10 @@ def plot_missing_values(df: pd.DataFrame) -> None:
 
 def plot_price_distribution(df: pd.DataFrame) -> None:
     """
-    Plot price distribution and time series
+    Plot price distribution histogram and time series line plot.
     
     Args:
-        df (pd.DataFrame): Input dataframe
+        df (pd.DataFrame): Input dataframe containing 'price' and 'start_date' columns
     """
     color1 = ['#296C92','#3EB489']
     
@@ -52,10 +54,10 @@ def plot_price_distribution(df: pd.DataFrame) -> None:
 
 def plot_weather_correlations(df: pd.DataFrame) -> None:
     """
-    Plot correlation heatmap for weather features and price
+    Plot correlation heatmap between weather features and price.
     
     Args:
-        df (pd.DataFrame): Input dataframe
+        df (pd.DataFrame): Input dataframe containing weather features and price columns
     """
     weather_cols = ['windspeed', 'temp', 'cloudcover', 'precip', 'solarradiation', 'price']
     
@@ -72,22 +74,22 @@ def seasonal_analysis_weekly(df: pd.DataFrame) -> None:
     Args:
         df (pd.DataFrame): DataFrame with 'start_date' and 'price' columns (weekly frequency).
     """
-    # Vérification des colonnes
+    # Check required columns
     if 'start_date' not in df.columns or 'price' not in df.columns:
         raise ValueError("DataFrame must contain 'start_date' and 'price' columns.")
 
-    # Conversion des dates et indexation
+    # Convert dates and set index
     df = df.copy()
     df['start_date'] = pd.to_datetime(df['start_date'])
     df = df.set_index('start_date')
 
-    # Agrégation par semaine, interpolation des valeurs manquantes
+    # Weekly aggregation and interpolation of missing values
     weekly_price = df['price'].resample('W-MON').mean().interpolate()
 
-    # Décomposition saisonnière additive
+    # Additive seasonal decomposition
     decomposition = seasonal_decompose(weekly_price, model='additive', period=52)
 
-    # Affichage des composantes
+    # Plot components
     decomposition.plot()
     plt.suptitle('Seasonal Decomposition of Weekly Strawberry Price', fontsize=16)
     plt.tight_layout()
@@ -96,29 +98,30 @@ def seasonal_analysis_weekly(df: pd.DataFrame) -> None:
 
 def plot_seasonal_patterns(df: pd.DataFrame) -> None:
     """
-    Plot seasonal patterns in price using boxplots
+    Plot seasonal patterns in price using monthly and weekly boxplots.
     
     Args:
-        df (pd.DataFrame): Input dataframe with 'start_date' and 'price' columns
+        df (pd.DataFrame): Input dataframe with 'start_date' and 'price' columns.
+                         A 'month' column will be created if it doesn't exist.
     """
-    # Ajouter colonne mois si elle n'existe pas
+    # Add month column if it doesn't exist
     if 'month' not in df.columns:
         df['month'] = df['start_date'].dt.month
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
 
-    # Boxplot par mois
+    # Monthly boxplot
     sns.boxplot(data=df, x='month', y='price', ax=ax1)
     ax1.set_title('Price Distribution by Month')
     ax1.set_xlabel('Month')
     ax1.set_ylabel('Price')
 
-    # Boxplot par semaine
+    # Weekly boxplot
     sns.boxplot(data=df, x='week', y='price', ax=ax2)
     ax2.set_title('Price Distribution by Week')
     ax2.set_xlabel('Week')
     ax2.set_ylabel('Price')
-    ax2.set_xticks(range(1, 54, 2))  # Espacement lisible
+    ax2.set_xticks(range(1, 54, 2))  # Set readable spacing
 
     plt.tight_layout()
     plt.show()

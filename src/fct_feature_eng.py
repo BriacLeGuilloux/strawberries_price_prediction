@@ -1,3 +1,5 @@
+# fonctions used for notebook 2_feature_eng
+
 import pandas as pd
 import numpy as np
 from typing import Tuple, Optional, Dict, Any
@@ -6,20 +8,36 @@ from scipy.stats import skew
 from src.parameter import get_dict_params
 from datetime import datetime
 
-# Load of parameters
+# Load parameters
 dict_params = get_dict_params()
 weather_cols = dict_params['weather_cols']
 test_start_year = dict_params['test_start_year']
 col_to_scale = dict_params['col_to_scale']
 
 def week_to_month(year: int, week: int) -> int:
-    # Convertit année + semaine (ISO) en date (lundi de la semaine)
+    """
+    Convert ISO year and week number to month.
+    
+    Args:
+        year (int): Year
+        week (int): ISO week number
+        
+    Returns:
+        int: Month number (1-12)
+    """
+    # Convert year + week (ISO) to date (Monday of the week)
     date = datetime.strptime(f'{year}-W{week:02d}-1', "%Y-W%W-%w")
     return date.month
 
 def create_temporal_features(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Create temporal features from date columns
+    Create temporal features from date columns including month, season, and cyclical encodings.
+    
+    Args:
+        data (pd.DataFrame): Input dataframe with 'year' and 'week' columns
+        
+    Returns:
+        pd.DataFrame: DataFrame with additional temporal features
     """
     # time based features
     result = data.assign(
@@ -41,7 +59,13 @@ def create_temporal_features(data: pd.DataFrame) -> pd.DataFrame:
 
 def create_weather_features(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Create weather-related features
+    Create weather-related features including extreme weather indicators.
+    
+    Args:
+        data (pd.DataFrame): Input dataframe with weather measurements
+        
+    Returns:
+        pd.DataFrame: DataFrame with additional weather features
     """
     # Extreme weather indicators
     # According to internet, temperature above 30°C has negative impact on yield
@@ -55,7 +79,14 @@ def create_weather_features(data: pd.DataFrame) -> pd.DataFrame:
 
 def create_lag_features(data: pd.DataFrame, cols: list = None) -> pd.DataFrame:
     """
-    Create lagged features and rolling statistics
+    Create lagged features and rolling statistics for specified columns.
+    
+    Args:
+        data (pd.DataFrame): Input dataframe
+        cols (list, optional): List of columns to create features for. Defaults to weather columns.
+        
+    Returns:
+        pd.DataFrame: DataFrame with additional lag and rolling features
     """
     if cols is None:
         cols = weather_cols
@@ -82,7 +113,13 @@ def create_lag_features(data: pd.DataFrame, cols: list = None) -> pd.DataFrame:
 
 def create_price_features(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Create price-specific features
+    Create price-specific features including momentum, volatility, and relative price indicators.
+    
+    Args:
+        data (pd.DataFrame): Input dataframe with 'price' column
+        
+    Returns:
+        pd.DataFrame: DataFrame with additional price-related features
     """
     result = data.copy()
     
@@ -172,11 +209,11 @@ def split_train_test(data: pd.DataFrame, test_start_year: int = test_start_year)
 
 def scale_df(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Scale numerical features in a single DataFrame using StandardScaler.
-    Columns to scale are imported from parameter.py
+    Scale numerical features using StandardScaler.
+    Columns to scale are defined in parameter.py.
     
     Args:
-        data (pd.DataFrame): dataFrame to scale.
+        data (pd.DataFrame): DataFrame to scale
         
     Returns:
         pd.DataFrame, df scaled
@@ -184,7 +221,7 @@ def scale_df(data: pd.DataFrame) -> pd.DataFrame:
     result = data.copy()
     col_to_scale = get_dict_params()['col_to_scale']
     
-    # Initialisation of scaler
+    # Initialize scaler
     scaler = StandardScaler()
     result[col_to_scale] = scaler.fit_transform(result[col_to_scale])
     
