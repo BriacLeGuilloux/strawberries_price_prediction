@@ -1,7 +1,6 @@
 ## Recommendations for Improvement
 
 1. Exploratory Data Analysis
-
 Explore lagged weather-price correlations
 Include production and consumption data
 
@@ -19,3 +18,7 @@ Use validation sets for deeper evaluation with optimisation of hyperparameters
 
 4. Evaluation
 Analyze errors by season and model failure cases
+
+
+General
+Add testing

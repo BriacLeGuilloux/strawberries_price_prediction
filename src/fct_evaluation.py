@@ -2,13 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error
 from typing import Dict, Any
-
-from typing import Dict, Any
-import numpy as np
-import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
 
 from src.parameter import get_dict_params
 
@@ -17,54 +12,45 @@ dict_params = get_dict_params()
 metric_to_compute = dict_params['metric_to_compute']
 
 
-def calculate_metrics(y_true: pd.Series, y_pred: np.ndarray, metric_to_compute="RMSE") -> float:
+def calculate_rmse(y_true: pd.Series, y_pred: pd.Series) -> float:
     """
-    Calculate a selected evaluation metric, handling gaps and NaN values in the data.
-    
+    Compute the Root Mean Squared Error (RMSE) between two pandas Series.
+    """
+    return np.sqrt(mean_squared_error(y_true, y_pred))
+
+
+def calculate_metrics(y_true: pd.Series, y_pred: np.ndarray) -> float:
+    """
+    Compute the average RMSE over time-consistent segments, handling missing values and temporal gaps.
+
     Args:
         y_true (pd.Series): Actual values
         y_pred (np.ndarray): Predicted values
-        dict_params (Dict[str, Any]): Dictionary containing the key 'metric' with value 'MAE', 'RMSE', or 'MAPE'
-        
-    Returns:
-        float: Value of the selected metric
-    """
-    assert metric_to_compute in ["MAE", "RMSE", "MAPE"], f"Unsupported metric: {metric_to_compute}"
 
+    Returns:
+        float: Average RMSE across valid segments
+    """
     df = pd.DataFrame({'true': y_true, 'pred': y_pred}, index=y_true.index).dropna()
 
     if df.empty:
         return np.nan
 
+    # Identify temporal gaps longer than 31 days to split the time series
     gaps = df.index.to_series().diff() > pd.Timedelta(days=31)
     segments = np.cumsum(gaps)
 
-    metric_values = []
-    for segment in range(segments.max() + 1):
-        segment_data = df[segments == segment]
-        if segment_data.empty:
-            continue
+    # Calculate RMSE values for each segment
+    rmse_values = []
+    for segment_id in range(segments.max() + 1):
+        segment_data = df[segments == segment_id]
+        if not segment_data.empty:
+            rmse = calculate_rmse(segment_data['true'], segment_data['pred'])
+            rmse_values.append(rmse)
 
-        try:
-            if metric_to_compute == "MAE":
-                value = mean_absolute_error(segment_data['true'], segment_data['pred'])
-            elif metric_to_compute == "RMSE":
-                value = np.sqrt(mean_squared_error(segment_data['true'], segment_data['pred']))
-            elif metric_to_compute == "MAPE":
-                valid = segment_data['true'] != 0
-                if valid.any():
-                    value = mean_absolute_percentage_error(
-                        segment_data.loc[valid, 'true'],
-                        segment_data.loc[valid, 'pred']
-                    ) * 100
-                else:
-                    value = np.nan
-            metric_values.append(value)
-        except Exception:
-            continue
+    # Return average RMSE across segments
+    return np.mean(rmse_values) if rmse_values else np.nan
 
-    values = [v for v in metric_values if not np.isnan(v)]
-    return np.mean(values) if values else np.nan
+
 
 
 def split_into_segments(series: pd.Series, max_gap_days: int = 31) -> Dict[int, pd.Series]:
@@ -211,9 +197,13 @@ def evaluate_all_models(y_true: pd.Series, predictions: Dict[str, np.ndarray]) -
         Dict[str, Any]: Complete evaluation results
     """
     # Calculate RMSE for all models
-    metrics = {name: calculate_metrics(y_true, pred, metric_to_compute) 
-              for name, pred in predictions.items()}
-    metrics_df = pd.DataFrame(metrics.items(), columns=['Model', 'RMSE']).set_index('Model')
+    metrics = {}
+    for name, pred in predictions.items():
+        rmse = calculate_metrics(y_true, pred)
+        metrics[name] = {'RMSE': rmse}
+    
+    # Create metrics DataFrame
+    metrics_df = pd.DataFrame.from_dict(metrics, orient='index')
     
     # Generate all evaluations
     results = {

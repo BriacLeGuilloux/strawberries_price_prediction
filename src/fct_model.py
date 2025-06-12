@@ -3,7 +3,7 @@ import numpy as np
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA
 import joblib
-from typing import Tuple, Optional
+from typing import Tuple
 import xgboost as xgb
 
 def naive_forecast(train: pd.Series, test: pd.Series) -> np.ndarray:
@@ -23,7 +23,7 @@ def naive_forecast(train: pd.Series, test: pd.Series) -> np.ndarray:
 
 
 
-def fit_arima_model(train: pd.Series, test: pd.Series, order: tuple = (1, 1, 1)) -> Tuple[np.ndarray, Optional[ARIMA]]:
+def fit_arima_model(train: pd.Series, test: pd.Series, order: tuple = (1, 1, 1)) :
     """
     Fit and predict using ARIMA model
     
@@ -68,7 +68,7 @@ def create_features_for_xgboost(data: pd.Series, n_lags: int = 12) -> Tuple[np.n
     
     return X, y
 
-def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) -> Tuple[np.ndarray, Optional[xgb.XGBRegressor]]:
+def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) :
     """
     Fit and predict using XGBoost model
     
@@ -102,7 +102,7 @@ def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) -> Tu
     
     return predictions, model
 
-def save_model_and_predictions(model: Optional[object], predictions: np.ndarray, model_name: str) -> None:
+def save_model_and_predictions(model, predictions: np.ndarray, model_name: str) -> None:
     """
     Save model and its predictions
     

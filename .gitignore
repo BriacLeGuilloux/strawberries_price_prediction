@@ -1,7 +1,6 @@
 __pycache__
 .env
-.learn
 
 
-# Modèles
+# Models
 *.joblib
