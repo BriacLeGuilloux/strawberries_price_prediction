@@ -226,3 +226,19 @@ def scale_df(data: pd.DataFrame) -> pd.DataFrame:
     result[col_to_scale] = scaler.fit_transform(result[col_to_scale])
     
     return result
+
+
+def split_into_segments(series: pd.Series, max_gap_days: int = 31) -> Dict[int, pd.Series]:
+    """
+    Split a time series into continuous segments based on time gaps.
+    
+    Args:
+        series (pd.Series): Time-indexed series
+        max_gap_days (int): Maximum gap allowed between points to consider continuity
+        
+    Returns:
+        Dict[int, pd.Series]: Dictionary with segment index as keys and series segments as values
+    """
+    gaps = series.index.to_series().diff() > pd.Timedelta(days=max_gap_days)
+    segments = np.cumsum(gaps)
+    return {i: series[segments == i] for i in range(segments.max() + 1)}

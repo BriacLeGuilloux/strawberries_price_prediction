@@ -19,6 +19,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
+from datetime import datetime
 
 # Optimization & ML
 import optuna
@@ -26,7 +27,7 @@ import xgboost as xgb
 
 # Personnal functions
 from fct_feature_eng import preprocessing, split_train_test, scale_df
-from fct_model import fit_xgboost_model
+from src.fct_train import fit_xgboost_model
 from parameter import get_dict_params
 
 # Setup logging
@@ -152,42 +153,51 @@ def train_model(
     params: Dict
 ) -> Tuple[Dict, Dict]:
     """
-    Train XGBoost model with hyperparameter optimization.
-    
+    Train an XGBoost model with hyperparameter optimization using Optuna.
+
     Args:
-        train_data: Training data
-        test_data: Test data
-        params: Parameter dictionary
-        
+        train_data (pd.Series): Time series training data.
+        test_data (pd.Series): Time series testing data.
+        params (Dict): Dictionary containing default or fixed model parameters.
+
     Returns:
-        Tuple[Dict, Dict]: Model and metrics
+        Tuple[Dict, Dict]: Trained model and performance metrics.
     """
-    # Optimize XGBoost hyperparameters
-    study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: optimize_xgboost(trial, train_data), n_trials=20)
-    best_params = study.best_params
-    
-    # Train model with best parameters
+
+    # Step 1: Optimize XGBoost hyperparameters using Optuna
+    study = optuna.create_study(direction='minimize')  # We want to minimize the loss (e.g., RMSE)
+    study.optimize(lambda trial: optimize_xgboost(trial, train_data), n_trials=20)  # Try 20 combinations
+    best_params = study.best_params  # Extract the best parameters found
+
+    # Step 2: Prepare final model parameters
+    # Remove 'n_lags' since it's not an XGBoost hyperparameter (used for feature generation)
     model_params = {k: v for k, v in best_params.items() if k != 'n_lags'}
-    model_params.update(params['model_params']['current'])  # Add default parameters
+    
+    # Merge in default parameters provided externally (e.g., fixed learning rate)
+    model_params.update(params['model_params']['current'])
+
+    # Step 3: Train final model and generate predictions
+    # 'fit_xgboost_model' handles feature engineering with lags and model training
     predictions, model = fit_xgboost_model(
         train_data,
         test_data,
         n_lags=best_params['n_lags'],
         params=model_params
     )
-    
-    # Calculate metrics
-    train_pred = model.predict(train_data)
-    train_rmse = np.sqrt(mean_squared_error(train_data, train_pred))
-    test_rmse = np.sqrt(mean_squared_error(test_data, predictions))
-    
+
+    # Step 4: Evaluate model performance using RMSE on training and testing sets
+    train_pred = model.predict(train_data)  # Predict on training data
+    train_rmse = np.sqrt(mean_squared_error(train_data, train_pred))  # Training RMSE
+    test_rmse = np.sqrt(mean_squared_error(test_data, predictions))  # Testing RMSE
+
+    # Step 5: Store evaluation metrics and best parameters
     metrics = {
         'train_rmse': train_rmse,
         'test_rmse': test_rmse,
         'best_params': best_params
     }
-    
+
+    # Return the trained model and evaluation metrics
     return model, metrics
 
 
@@ -195,6 +205,8 @@ def main():
     """Main training pipeline."""
     # Load parameters
     params = get_dict_params()
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    model_filename = f"xgboost_model_{timestamp}.joblib"
     
     try:
         # Create necessary directories
@@ -237,7 +249,9 @@ def main():
         
         # Save model and metrics
         logger.info("Saving model and metrics...")
-        joblib.dump(model, params['paths']['files']['models']['best_model'])
+        joblib.dump(model, params['paths']['files']['models']['best_model'])   # Saving best model
+        # joblib.dump(model, model_path)
+        
         
         logger.info("Training completed successfully")
         
