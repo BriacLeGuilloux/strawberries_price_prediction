@@ -5,7 +5,7 @@ import numpy as np
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA
 import joblib
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 import xgboost as xgb
 
 def naive_forecast(train: pd.Series, test: pd.Series) -> np.ndarray:
@@ -70,7 +70,12 @@ def create_features_for_xgboost(data: pd.Series, n_lags: int = 12) -> Tuple[np.n
     
     return X, y
 
-def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) -> Tuple[np.ndarray, xgb.XGBRegressor]:
+def fit_xgboost_model(
+    train: pd.Series,
+    test: pd.Series,
+    n_lags: int = 12,
+    params: Optional[Dict] = None
+) -> Tuple[np.ndarray, xgb.XGBRegressor]:
     """
     Fit and predict using XGBoost model
     
@@ -78,6 +83,7 @@ def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) -> Tu
         train (pd.Series): Training time series
         test (pd.Series): Test time series
         n_lags (int): Number of lags to use as features
+        params (Dict, optional): XGBoost model parameters. If None, uses default parameters
         
     Returns:
         tuple: (predictions, fitted model)
@@ -85,13 +91,15 @@ def fit_xgboost_model(train: pd.Series, test: pd.Series, n_lags: int = 12) -> Tu
     # Create features for training
     X_train, y_train = create_features_for_xgboost(train, n_lags)
     
-    # Initialize and train XGBoost model
-    model = xgb.XGBRegressor(
-        objective='reg:squarederror',
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=5
-    )
+    # Initialize and train XGBoost model with provided or default parameters
+    default_params = {
+        'objective': 'reg:squarederror',
+        'n_estimators': 100,
+        'learning_rate': 0.1,
+        'max_depth': 5
+    }
+    model_params = {**default_params, **(params or {})}
+    model = xgb.XGBRegressor(**model_params)
     model.fit(X_train, y_train)
     
     # Create features for prediction

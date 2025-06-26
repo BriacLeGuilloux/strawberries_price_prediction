@@ -5,7 +5,7 @@ import numpy as np
 from typing import Tuple, Optional, Dict, Any
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import skew
-from src.parameter import get_dict_params
+from parameter import get_dict_params
 from datetime import datetime
 
 # Load parameters
